@@ -1,0 +1,22 @@
+export interface Video {
+  id: string
+  title: string
+  description: string
+  videoUrl: string
+  thumbnailUrl?: string
+  hashtags: string[]
+  createdAt: number
+  ownerId: string
+}
+
+export interface SilverPrice {
+  price: number
+  change: number
+  changePercent: number
+  timestamp: number
+}
+
+export interface PricePoint {
+  time: number
+  price: number
+}
