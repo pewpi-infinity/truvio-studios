@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { TrendUp, TrendDown, ChartLine } from '@phosphor-icons/react'
-import { fetchSilverPrice } from '@/lib/silverApi'
-import { SilverPrice } from '@/lib/types'
+import { TrendUp, TrendDown, Globe } from '@phosphor-icons/react'
+import { fetchChinaSilverPrice } from '@/lib/silverApi'
+import { ChinaSilverPrice } from '@/lib/types'
 import { formatPrice, formatPriceChange } from '@/lib/helpers'
 
-export function SilverPriceTicker() {
-  const [price, setPrice] = useState<SilverPrice | null>(null)
+export function ChinaSilverPriceTicker() {
+  const [price, setPrice] = useState<ChinaSilverPrice | null>(null)
   const [prevPrice, setPrevPrice] = useState<number | null>(null)
 
   useEffect(() => {
     const loadPrice = async () => {
-      const data = await fetchSilverPrice()
+      const data = await fetchChinaSilverPrice()
       setPrice((prevPrice) => {
-        setPrevPrice(prevPrice?.price || null)
+        setPrevPrice(prevPrice?.usdPrice || null)
         return data
       })
     }
@@ -36,29 +36,32 @@ export function SilverPriceTicker() {
   }
 
   const isPositive = price.change >= 0
-  const priceChanged = prevPrice !== null && price.price !== prevPrice
+  const priceChanged = prevPrice !== null && price.usdPrice !== prevPrice
 
   return (
     <div className="bg-gradient-to-br from-card to-secondary border border-border rounded-lg px-6 py-4 shadow-lg">
       <div className="flex items-center justify-between gap-6">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-muted/50 rounded-lg">
-            <ChartLine className="text-accent" size={24} />
+          <div className="p-2 bg-orange-500/20 rounded-lg">
+            <Globe className="text-orange-400" size={24} weight="fill" />
           </div>
           <div>
-            <div className="text-sm text-muted-foreground font-medium">Silver Spot Price</div>
+            <div className="text-sm text-muted-foreground font-medium">China Silver Price (USD)</div>
             <div className="flex items-baseline gap-2">
               <motion.div
-                key={price.price}
+                key={price.usdPrice}
                 initial={priceChanged ? { scale: 1.1, color: isPositive ? '#4ade80' : '#ef4444' } : false}
                 animate={{ scale: 1, color: 'inherit' }}
                 transition={{ duration: 0.3 }}
                 className="text-3xl font-bold text-foreground"
                 style={{ fontFamily: 'Space Grotesk, sans-serif', fontVariantNumeric: 'tabular-nums' }}
               >
-                ${formatPrice(price.price)}
+                ${formatPrice(price.usdPrice)}
               </motion.div>
               <span className="text-sm text-muted-foreground">USD/oz</span>
+            </div>
+            <div className="text-xs text-orange-400 mt-1">
+              +{price.premium.toFixed(2)}% premium vs global
             </div>
           </div>
         </div>

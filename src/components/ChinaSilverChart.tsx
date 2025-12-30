@@ -1,18 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { motion } from 'framer-motion'
-import { fetchSilverPrice, generateMockPriceHistory } from '@/lib/silverApi'
+import { fetchChinaSilverPrice, generateMockPriceHistory } from '@/lib/silverApi'
 import { PricePoint } from '@/lib/types'
 
-export function SilverPriceChart() {
+export function ChinaSilverChart() {
   const svgRef = useRef<SVGSVGElement>(null)
   const [data, setData] = useState<PricePoint[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const loadData = async () => {
-      const currentPrice = await fetchSilverPrice()
-      const history = generateMockPriceHistory(currentPrice.price, 24)
+      const currentPrice = await fetchChinaSilverPrice()
+      const history = generateMockPriceHistory(currentPrice.usdPrice, 24)
       setData(history)
     }
 
@@ -66,7 +66,7 @@ export function SilverPriceChart() {
 
     const gradient = svg.append('defs')
       .append('linearGradient')
-      .attr('id', 'area-gradient')
+      .attr('id', 'china-area-gradient')
       .attr('x1', '0%')
       .attr('y1', '0%')
       .attr('x2', '0%')
@@ -74,23 +74,23 @@ export function SilverPriceChart() {
 
     gradient.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', 'oklch(0.72 0.15 210)')
+      .attr('stop-color', 'oklch(0.65 0.15 30)')
       .attr('stop-opacity', 0.3)
 
     gradient.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', 'oklch(0.72 0.15 210)')
+      .attr('stop-color', 'oklch(0.65 0.15 30)')
       .attr('stop-opacity', 0)
 
     g.append('path')
       .datum(data)
-      .attr('fill', 'url(#area-gradient)')
+      .attr('fill', 'url(#china-area-gradient)')
       .attr('d', area)
 
     const path = g.append('path')
       .datum(data)
       .attr('fill', 'none')
-      .attr('stroke', 'oklch(0.72 0.15 210)')
+      .attr('stroke', 'oklch(0.65 0.15 30)')
       .attr('stroke-width', 2.5)
       .attr('d', line)
 
@@ -146,13 +146,16 @@ export function SilverPriceChart() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
       className="bg-card border border-border rounded-lg p-6 shadow-lg"
       ref={containerRef}
     >
-      <h3 className="text-xl font-semibold mb-4 text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-        24-Hour Price Chart
+      <h3 className="text-xl font-semibold mb-2 text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+        China Market - 24hr Chart
       </h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Shanghai silver prices in USD (with market premium)
+      </p>
       <svg ref={svgRef} className="w-full"></svg>
     </motion.div>
   )
