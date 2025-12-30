@@ -12,8 +12,10 @@ export function SilverPriceTicker() {
   useEffect(() => {
     const loadPrice = async () => {
       const data = await fetchSilverPrice()
-      setPrevPrice(price?.price || null)
-      setPrice(data)
+      setPrice((prevPrice) => {
+        setPrevPrice(prevPrice?.price || null)
+        return data
+      })
     }
 
     loadPrice()

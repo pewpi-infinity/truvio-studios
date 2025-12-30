@@ -12,8 +12,10 @@ export function ChinaSilverPriceTicker() {
   useEffect(() => {
     const loadPrice = async () => {
       const data = await fetchChinaSilverPrice()
-      setPrevPrice(price?.usdPrice || null)
-      setPrice(data)
+      setPrice((prevPrice) => {
+        setPrevPrice(prevPrice?.usdPrice || null)
+        return data
+      })
     }
 
     loadPrice()

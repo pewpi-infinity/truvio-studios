@@ -1,5 +1,10 @@
 import { SilverPrice, PricePoint, ChinaSilverPrice } from './types'
 
+// Configuration for API usage
+// Set USE_REAL_API to true and configure API_KEY to use real data
+const USE_REAL_API = false
+const API_KEY = '' // Add your API key here (e.g., from metals-api.com or goldapi.io)
+
 // Cache for storing the last successful price data
 let priceCache: SilverPrice | null = null
 let chinaPriceCache: ChinaSilverPrice | null = null
@@ -9,66 +14,130 @@ let baseGlobalPrice = 30.50 + Math.random() * 0.5
 let baseChinaPrice = 31.20 + Math.random() * 0.5
 
 export async function fetchSilverPrice(): Promise<SilverPrice> {
-  try {
-    // Try to fetch from a real API first (user can configure their own API key in production)
-    // For now, this will fall through to mock data
-    throw new Error('Using mock data - configure API key for real data')
-  } catch (error) {
-    // Generate realistic mock data with small random fluctuations
-    const fluctuation = (Math.random() - 0.5) * 0.3
-    baseGlobalPrice = Math.max(28, Math.min(35, baseGlobalPrice + fluctuation))
-    
-    const change = priceCache ? baseGlobalPrice - priceCache.price : 0.15
-    const changePercent = priceCache && priceCache.price > 0 
-      ? ((baseGlobalPrice - priceCache.price) / priceCache.price) * 100 
-      : 0.49
-    
-    const silverPrice: SilverPrice = {
-      price: parseFloat(baseGlobalPrice.toFixed(2)),
-      change: parseFloat(change.toFixed(2)),
-      changePercent: parseFloat(changePercent.toFixed(2)),
-      timestamp: Date.now()
+  if (USE_REAL_API && API_KEY) {
+    try {
+      // Example using metals-api.com - adjust endpoint based on your chosen provider
+      const response = await fetch(
+        `https://metals-api.com/api/latest?access_key=${API_KEY}&base=USD&symbols=XAG`
+      )
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      
+      // Calculate change from cached price
+      const price = data.rates?.USDXAG || data.price || 0
+      const change = priceCache ? price - priceCache.price : 0
+      const changePercent = priceCache && priceCache.price > 0 
+        ? ((price - priceCache.price) / priceCache.price) * 100 
+        : 0
+      
+      const silverPrice: SilverPrice = {
+        price: parseFloat(price.toFixed(2)),
+        change: parseFloat(change.toFixed(2)),
+        changePercent: parseFloat(changePercent.toFixed(2)),
+        timestamp: Date.now()
+      }
+      
+      priceCache = silverPrice
+      return silverPrice
+    } catch (error) {
+      console.error('Failed to fetch silver price from API:', error)
+      // Fall through to mock data on error
     }
-    
-    // Update cache
-    priceCache = silverPrice
-    
-    return silverPrice
   }
+  
+  // Generate realistic mock data with small random fluctuations
+  const fluctuation = (Math.random() - 0.5) * 0.3
+  baseGlobalPrice = Math.max(28, Math.min(35, baseGlobalPrice + fluctuation))
+  
+  const change = priceCache ? baseGlobalPrice - priceCache.price : 0.15
+  const changePercent = priceCache && priceCache.price > 0 
+    ? ((baseGlobalPrice - priceCache.price) / priceCache.price) * 100 
+    : 0.49
+  
+  const silverPrice: SilverPrice = {
+    price: parseFloat(baseGlobalPrice.toFixed(2)),
+    change: parseFloat(change.toFixed(2)),
+    changePercent: parseFloat(changePercent.toFixed(2)),
+    timestamp: Date.now()
+  }
+  
+  // Update cache
+  priceCache = silverPrice
+  
+  return silverPrice
 }
 
 export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
-  try {
-    // Try to fetch from a real API first (user can configure their own API key in production)
-    throw new Error('Using mock data - configure API key for real data')
-  } catch (error) {
-    // Generate realistic mock data with small random fluctuations
-    // China typically has 2-3% premium
-    const fluctuation = (Math.random() - 0.5) * 0.3
-    baseChinaPrice = Math.max(29, Math.min(36, baseChinaPrice + fluctuation))
-    
-    const change = chinaPriceCache ? baseChinaPrice - chinaPriceCache.usdPrice : 0.18
-    const changePercent = chinaPriceCache && chinaPriceCache.usdPrice > 0 
-      ? ((baseChinaPrice - chinaPriceCache.usdPrice) / chinaPriceCache.usdPrice) * 100 
-      : 0.58
-    
-    // Calculate premium relative to global price
-    const globalPrice = priceCache?.price || baseGlobalPrice
-    const premium = ((baseChinaPrice - globalPrice) / globalPrice) * 100
-    
-    const chinaSilverPrice: ChinaSilverPrice = {
-      usdPrice: parseFloat(baseChinaPrice.toFixed(2)),
-      change: parseFloat(change.toFixed(2)),
-      changePercent: parseFloat(changePercent.toFixed(2)),
-      premium: parseFloat(Math.max(0, premium).toFixed(2)),
-      timestamp: Date.now()
+  if (USE_REAL_API && API_KEY) {
+    try {
+      // Fetch silver price in USD
+      const response = await fetch(
+        `https://metals-api.com/api/latest?access_key=${API_KEY}&base=USD&symbols=XAG`
+      )
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const basePrice = data.rates?.USDXAG || data.price || 0
+      
+      // Shanghai silver typically trades at a small premium to global markets
+      // Adding a realistic 1-3% premium for China market
+      const chinaPremium = 1.02 + (Math.random() * 0.01) // 2-3% premium
+      const chinaUsdPrice = basePrice * chinaPremium
+      
+      const change = chinaPriceCache ? chinaUsdPrice - chinaPriceCache.usdPrice : 0
+      const changePercent = chinaPriceCache && chinaPriceCache.usdPrice > 0 
+        ? ((chinaUsdPrice - chinaPriceCache.usdPrice) / chinaPriceCache.usdPrice) * 100 
+        : 0
+      
+      const chinaSilverPrice: ChinaSilverPrice = {
+        usdPrice: parseFloat(chinaUsdPrice.toFixed(2)),
+        change: parseFloat(change.toFixed(2)),
+        changePercent: parseFloat(changePercent.toFixed(2)),
+        premium: parseFloat(((chinaPremium - 1) * 100).toFixed(2)),
+        timestamp: Date.now()
+      }
+      
+      chinaPriceCache = chinaSilverPrice
+      return chinaSilverPrice
+    } catch (error) {
+      console.error('Failed to fetch China silver price from API:', error)
+      // Fall through to mock data on error
     }
-    
-    // Update cache
-    chinaPriceCache = chinaSilverPrice
-    
-    return chinaSilverPrice
   }
+  
+  // Generate realistic mock data with small random fluctuations
+  // China typically has 2-3% premium
+  const fluctuation = (Math.random() - 0.5) * 0.3
+  baseChinaPrice = Math.max(29, Math.min(36, baseChinaPrice + fluctuation))
+  
+  const change = chinaPriceCache ? baseChinaPrice - chinaPriceCache.usdPrice : 0.18
+  const changePercent = chinaPriceCache && chinaPriceCache.usdPrice > 0 
+    ? ((baseChinaPrice - chinaPriceCache.usdPrice) / chinaPriceCache.usdPrice) * 100 
+    : 0.58
+  
+  // Calculate premium relative to global price
+  const globalPrice = priceCache?.price || baseGlobalPrice
+  const premium = ((baseChinaPrice - globalPrice) / globalPrice) * 100
+  
+  const chinaSilverPrice: ChinaSilverPrice = {
+    usdPrice: parseFloat(baseChinaPrice.toFixed(2)),
+    change: parseFloat(change.toFixed(2)),
+    changePercent: parseFloat(changePercent.toFixed(2)),
+    premium: parseFloat(Math.max(0, premium).toFixed(2)),
+    timestamp: Date.now()
+  }
+  
+  // Update cache
+  chinaPriceCache = chinaSilverPrice
+  
+  return chinaSilverPrice
 }
 
 export function generateMockPriceHistory(currentPrice: number, points: number = 24): PricePoint[] {

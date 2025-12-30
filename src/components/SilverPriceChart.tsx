@@ -17,6 +17,10 @@ export function SilverPriceChart() {
     }
 
     loadData()
+    // Refresh chart data every minute to keep it current
+    const interval = setInterval(loadData, 60000)
+
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {

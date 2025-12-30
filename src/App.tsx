@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CloudArrowUp, MagnifyingGlass, Sparkle } from '@phosphor-icons/react'
+import { CloudArrowUp, MagnifyingGlass, Sparkle, Gear } from '@phosphor-icons/react'
 import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,29 +13,42 @@ import { VideoUploadDialog } from '@/components/VideoUploadDialog'
 import { VideoCard } from '@/components/VideoCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ConnectionGuide } from '@/components/ConnectionGuide'
+import { PresentationContextDialog } from '@/components/PresentationContextDialog'
+import { BuildYourOwnBanner } from '@/components/BuildYourOwnBanner'
 import { Video } from '@/lib/types'
 import { toast } from 'sonner'
 
 function App() {
   const [videos, setVideos] = useKV<Video[]>('truvio-videos', [])
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [contextDialogOpen, setContextDialogOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [userId, setUserId] = useState('')
+  const [isOwner, setIsOwner] = useState(false)
+  const [presentationContext, setPresentationContext] = useKV<string>('presentation-context', 'Silver')
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const user = await window.spark.user()
-        setUserId(user?.id?.toString() || 'anonymous-user')
+        const currentUserId = user?.id?.toString() || 'anonymous-user'
+        setUserId(currentUserId)
+        
+        // Check if this user is the owner (has uploaded videos)
+        const videoList = videos || []
+        const hasOwnVideos = videoList.some(v => v.ownerId === currentUserId)
+        setIsOwner(hasOwnVideos || videoList.length === 0)
       } catch (error) {
         setUserId('anonymous-user')
+        setIsOwner(false)
       }
     }
     loadUser()
-  }, [])
+  }, [videos])
 
   const handleUpload = (video: Video) => {
     setVideos((currentVideos) => [...(currentVideos || []), video])
+    toast.success('Video uploaded successfully!')
   }
 
   const handleDelete = (videoId: string) => {
@@ -51,6 +64,11 @@ function App() {
     })
     
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleContextChange = (newContext: string) => {
+    setPresentationContext(newContext)
+    toast.success(`Presentation context changed to: ${newContext}`)
   }
 
   const videoList = videos || []
@@ -84,14 +102,26 @@ function App() {
                     <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent" style={{ fontFamily: 'Space Grotesk, sans-serif', letterSpacing: '-0.02em' }}>
                       Truvio Studios
                     </h1>
-                    <p className="text-sm text-muted-foreground">Powered by Infinity</p>
+                    <p className="text-sm text-muted-foreground">
+                      Presenting: {presentationContext} • Powered by Infinity
+                    </p>
                   </div>
                 </motion.div>
 
-                <Button onClick={() => setUploadDialogOpen(true)} size="lg">
-                  <CloudArrowUp size={20} />
-                  Upload Video
-                </Button>
+                <div className="flex gap-2">
+                  {isOwner && (
+                    <>
+                      <Button onClick={() => setContextDialogOpen(true)} variant="outline" size="lg">
+                        <Gear size={20} />
+                        Change Context
+                      </Button>
+                      <Button onClick={() => setUploadDialogOpen(true)} size="lg">
+                        <CloudArrowUp size={20} />
+                        Upload Video
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
 
               <motion.div
@@ -174,6 +204,12 @@ function App() {
               </div>
             </div>
 
+            {!isOwner && videoList.length > 0 && (
+              <div className="container mx-auto px-4 pb-12">
+                <BuildYourOwnBanner />
+              </div>
+            )}
+
             <ConnectionGuide />
           </main>
 
@@ -195,6 +231,13 @@ function App() {
         onOpenChange={setUploadDialogOpen}
         onUpload={handleUpload}
         userId={userId}
+      />
+
+      <PresentationContextDialog
+        open={contextDialogOpen}
+        onOpenChange={setContextDialogOpen}
+        currentContext={presentationContext || 'Silver'}
+        onSave={handleContextChange}
       />
 
       <Toaster position="bottom-right" />
