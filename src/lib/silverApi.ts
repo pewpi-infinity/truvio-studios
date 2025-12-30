@@ -2,8 +2,18 @@ import { SilverPrice, PricePoint, ChinaSilverPrice } from './types'
 
 // Configuration for API usage
 // Set USE_REAL_API to true and configure API_KEY to use real data
-const USE_REAL_API = false
-const API_KEY = '' // Add your API key here (e.g., from metals-api.com or goldapi.io)
+// IMPORTANT: Use environment variables in production to avoid exposing API keys
+const USE_REAL_API = import.meta.env.VITE_USE_REAL_API === 'true' || false
+const API_KEY = import.meta.env.VITE_API_KEY || '' // Set via environment variable
+
+// Price simulation constants
+const PRICE_FLUCTUATION_RANGE = 0.3
+const MIN_SILVER_PRICE = 28
+const MAX_SILVER_PRICE = 35
+const MIN_CHINA_PRICE = 29
+const MAX_CHINA_PRICE = 36
+const CHINA_BASE_PREMIUM = 1.02
+const CHINA_PREMIUM_VARIANCE = 0.01
 
 // Cache for storing the last successful price data
 let priceCache: SilverPrice | null = null
@@ -50,8 +60,8 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
   }
   
   // Generate realistic mock data with small random fluctuations
-  const fluctuation = (Math.random() - 0.5) * 0.3
-  baseGlobalPrice = Math.max(28, Math.min(35, baseGlobalPrice + fluctuation))
+  const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
+  baseGlobalPrice = Math.max(MIN_SILVER_PRICE, Math.min(MAX_SILVER_PRICE, baseGlobalPrice + fluctuation))
   
   const change = priceCache ? baseGlobalPrice - priceCache.price : 0.15
   const changePercent = priceCache && priceCache.price > 0 
@@ -88,7 +98,7 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
       
       // Shanghai silver typically trades at a small premium to global markets
       // Adding a realistic 1-3% premium for China market
-      const chinaPremium = 1.02 + (Math.random() * 0.01) // 2-3% premium
+      const chinaPremium = CHINA_BASE_PREMIUM + (Math.random() * CHINA_PREMIUM_VARIANCE)
       const chinaUsdPrice = basePrice * chinaPremium
       
       const change = chinaPriceCache ? chinaUsdPrice - chinaPriceCache.usdPrice : 0
@@ -114,8 +124,8 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
   
   // Generate realistic mock data with small random fluctuations
   // China typically has 2-3% premium
-  const fluctuation = (Math.random() - 0.5) * 0.3
-  baseChinaPrice = Math.max(29, Math.min(36, baseChinaPrice + fluctuation))
+  const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
+  baseChinaPrice = Math.max(MIN_CHINA_PRICE, Math.min(MAX_CHINA_PRICE, baseChinaPrice + fluctuation))
   
   const change = chinaPriceCache ? baseChinaPrice - chinaPriceCache.usdPrice : 0.18
   const changePercent = chinaPriceCache && chinaPriceCache.usdPrice > 0 

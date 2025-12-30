@@ -3,10 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Sparkle, GitBranch, Copy } from '@phosphor-icons/react'
 import { toast } from 'sonner'
 
+// Repository configuration - can be set via environment variable
+const REPO_URL = import.meta.env.VITE_REPO_URL || 'https://github.com/pewpi-infinity/truvio-studios'
+const REPO_OWNER_AND_NAME = REPO_URL.replace('https://github.com/', '')
+
 export function BuildYourOwnBanner() {
   const handleCopyRepoUrl = () => {
-    const repoUrl = 'https://github.com/pewpi-infinity/truvio-studios'
-    navigator.clipboard.writeText(repoUrl)
+    navigator.clipboard.writeText(REPO_URL)
     toast.success('Repository URL copied!', {
       description: 'Paste this URL to fork and build your own studio'
     })
@@ -19,7 +22,7 @@ export function BuildYourOwnBanner() {
 
   const handleForkRepo = () => {
     // Direct link to fork the repository
-    window.open('https://github.com/pewpi-infinity/truvio-studios/fork', '_blank')
+    window.open(`${REPO_URL}/fork`, '_blank')
   }
 
   return (
