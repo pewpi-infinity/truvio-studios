@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Toaster } from '@/components/ui/sonner'
 import { SilverPriceTicker } from '@/components/SilverPriceTicker'
 import { SilverPriceChart } from '@/components/SilverPriceChart'
+import { ChinaSilverPriceTicker } from '@/components/ChinaSilverPriceTicker'
+import { ChinaSilverChart } from '@/components/ChinaSilverChart'
 import { VideoUploadDialog } from '@/components/VideoUploadDialog'
 import { VideoCard } from '@/components/VideoCard'
 import { EmptyState } from '@/components/EmptyState'
@@ -125,8 +127,10 @@ function App() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
+              className="space-y-6"
             >
               <SilverPriceTicker />
+              <ChinaSilverPriceTicker />
             </motion.div>
 
             <div className="grid lg:grid-cols-3 gap-8">
@@ -166,6 +170,7 @@ function App() {
 
               <div className="space-y-6">
                 <SilverPriceChart />
+                <ChinaSilverChart />
               </div>
             </div>
 

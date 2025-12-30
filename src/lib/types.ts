@@ -16,6 +16,14 @@ export interface SilverPrice {
   timestamp: number
 }
 
+export interface ChinaSilverPrice {
+  usdPrice: number
+  change: number
+  changePercent: number
+  premium: number
+  timestamp: number
+}
+
 export interface PricePoint {
   time: number
   price: number
