@@ -135,7 +135,7 @@ export function VideoUploadDialog({ open, onOpenChange, onUpload, userId }: Vide
         <div className="flex items-start gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-md">
           <Info size={20} className="text-blue-500 flex-shrink-0 mt-0.5" weight="fill" />
           <div className="text-sm text-blue-500">
-            <p className="font-medium mb-1">⚠️ Local Storage Only</p>
+            <p className="font-medium mb-1">Local Storage Only</p>
             <p className="text-xs opacity-90">
               Videos are stored in your browser and will <strong>not</strong> be accessible to others when you share your studio link. 
               They are only visible on this device and browser. See README for details.

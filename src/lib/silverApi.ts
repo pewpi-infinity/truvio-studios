@@ -342,13 +342,13 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
       // Fall back to cached data
       if (cachedPrice) {
         console.warn('[SilverAPI] Using stale cached data due to API errors')
-        priceCache = { ...cachedPrice, dataSource: 'cache' as const }
+        priceCache = { ...cachedPrice, dataSource: cachedPrice.dataSource || 'cache' as const }
         return priceCache
       }
       
       if (priceCache) {
         console.warn('[SilverAPI] Using memory cached data due to API errors')
-        return { ...priceCache, dataSource: 'cache' as const }
+        return { ...priceCache, dataSource: priceCache.dataSource || 'cache' as const }
       }
     }
   }
@@ -472,13 +472,13 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
       // Fall back to cached data
       if (cachedPrice) {
         console.warn('[SilverAPI] Using stale cached China silver price data')
-        chinaPriceCache = { ...cachedPrice, dataSource: 'cache' as const }
+        chinaPriceCache = { ...cachedPrice, dataSource: cachedPrice.dataSource || 'cache' as const }
         return chinaPriceCache
       }
       
       if (chinaPriceCache) {
         console.warn('[SilverAPI] Using memory cached China silver price data')
-        return { ...chinaPriceCache, dataSource: 'cache' as const }
+        return { ...chinaPriceCache, dataSource: chinaPriceCache.dataSource || 'cache' as const }
       }
     }
   }
