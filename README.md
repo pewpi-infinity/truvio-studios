@@ -124,6 +124,31 @@ Example `runtime.config.json`:
 
 ## Usage
 
+### Video Storage
+
+Videos uploaded to Truvio Studios are **automatically committed to the repository** in the `public/videos` directory.
+
+#### How Video Storage Works
+
+- **Video files** are stored in `public/videos/` directory in the repository
+- **Thumbnail images** are stored in `public/thumbnails/` directory
+- **Video metadata** (title, description, hashtags) is stored in GitHub Spark KV store
+- When you upload a video, it's automatically committed to the main branch
+- Videos are accessible to anyone viewing your deployed site
+
+#### Features
+
+✅ **Persistent storage** - Videos are committed to Git and persist across deployments  
+✅ **Shareable** - Anyone with your studio URL can view the videos  
+✅ **Version controlled** - All videos are tracked in Git history  
+✅ **No external dependencies** - No need for cloud storage services  
+
+#### Requirements
+
+- GitHub authentication (automatically handled by Spark)
+- Write access to the repository
+- Videos are limited by GitHub repository size constraints (recommended < 100MB per video)
+
 ### As a Studio Owner
 
 1. **Upload Videos**: Click "Upload Video" to add content

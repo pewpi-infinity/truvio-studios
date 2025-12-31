@@ -86,8 +86,8 @@ export function VideoUploadDialog({ open, onOpenChange, onUpload, userId }: Vide
       const hashtags = extractHashtags(description)
       const videoId = `video-${Date.now()}`
       
-      // Store video in IndexedDB for persistent storage
-      await storeVideo(videoId, videoFile, thumbnailUrl, {
+      // Store video and thumbnail in the repository
+      const { videoPath, thumbnailPath } = await storeVideo(videoId, videoFile, thumbnailUrl, {
         title: title.trim(),
         description: description.trim(),
         hashtags,
@@ -96,27 +96,26 @@ export function VideoUploadDialog({ open, onOpenChange, onUpload, userId }: Vide
       })
 
       // Create video metadata to store in KV
-      // Empty videoUrl indicates the video is stored in IndexedDB and will be loaded dynamically
       const newVideo: Video = {
         id: videoId,
         title: title.trim(),
         description: description.trim(),
-        videoUrl: '', // Empty string indicates IndexedDB storage
-        thumbnailUrl,
+        videoUrl: videoPath, // Path to video in repository
+        thumbnailUrl: thumbnailPath, // Path to thumbnail in repository
         hashtags,
         createdAt: Date.now(),
         ownerId: userId
       }
 
       onUpload(newVideo)
-      toast.success('Video uploaded successfully!')
+      toast.success('Video uploaded and committed to repository!')
       
       setTitle('')
       setDescription('')
       setVideoFile(null)
       onOpenChange(false)
     } catch (error) {
-      toast.error('Failed to upload video')
+      toast.error('Failed to upload video: ' + (error as Error).message)
       console.error(error)
     } finally {
       setUploading(false)

@@ -242,14 +242,33 @@ function calculate24hMetrics(history: PricePoint[]): { high: number, low: number
 }
 
 export async function fetchSilverPrice(): Promise<SilverPrice> {
+  console.log('[SilverAPI] fetchSilverPrice called', {
+    USE_REAL_API,
+    hasMetalpriceAPIKey: !!METALPRICEAPI_KEY,
+    hasMetalsAPIKey: !!METALS_API_KEY,
+    hasCommoditiesAPIKey: !!COMMODITIES_API_KEY
+  })
+  
   // Check if cached data is still fresh
   const cachedPrice = loadFromStorage<SilverPrice>(STORAGE_KEY_PRICE)
   if (cachedPrice && isCacheFresh(cachedPrice.timestamp)) {
+    console.log('[SilverAPI] Using fresh cached data', {
+      age: Date.now() - cachedPrice.timestamp,
+      maxAge: CACHE_DURATION_MS
+    })
     priceCache = cachedPrice
     return cachedPrice
   }
   
+  if (cachedPrice) {
+    console.log('[SilverAPI] Cached data is stale', {
+      age: Date.now() - cachedPrice.timestamp,
+      maxAge: CACHE_DURATION_MS
+    })
+  }
+  
   if (USE_REAL_API && (METALPRICEAPI_KEY || METALS_API_KEY)) {
+    console.log('[SilverAPI] Attempting to fetch from real APIs')
     try {
       // Try fetching from multiple sources
       // Note: COMMODITIES_API support can be added in the future by implementing
@@ -266,7 +285,14 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
         )
         .map(result => result.value as number)
       
+      console.log('[SilverAPI] API fetch results', {
+        totalAttempts: prices.length,
+        successfulFetches: successfulPrices.length,
+        prices: successfulPrices
+      })
+      
       if (successfulPrices.length > 0) {
+        console.log('[SilverAPI] Using real API data', { basePrice: successfulPrices[0] })
         // Use the first successful price as base, then simulate exchanges
         const basePrice = successfulPrices[0]
         const exchanges = simulateExchangePrices(basePrice)
@@ -293,7 +319,8 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
           high24h: metrics.high,
           low24h: metrics.low,
           volume24h: metrics.volume,
-          exchanges
+          exchanges,
+          dataSource: 'api'
         }
         
         priceCache = silverPrice
@@ -314,19 +341,22 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
       
       // Fall back to cached data
       if (cachedPrice) {
-        console.warn('Using stale cached silver price data')
-        priceCache = cachedPrice
-        return cachedPrice
+        console.warn('[SilverAPI] Using stale cached data due to API errors')
+        priceCache = { ...cachedPrice, dataSource: cachedPrice.dataSource || 'cache' as const }
+        return priceCache
       }
       
       if (priceCache) {
-        console.warn('Using memory cached silver price data')
-        return priceCache
+        console.warn('[SilverAPI] Using memory cached data due to API errors')
+        return { ...priceCache, dataSource: priceCache.dataSource || 'cache' as const }
       }
     }
   }
   
   // Generate realistic mock data with exchange simulation
+  console.log('[SilverAPI] Generating mock data', {
+    reason: USE_REAL_API ? 'API calls failed' : 'Real API disabled'
+  })
   const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
   baseGlobalPrice = Math.max(MIN_SILVER_PRICE, Math.min(MAX_SILVER_PRICE, baseGlobalPrice + fluctuation))
   
@@ -353,7 +383,8 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
     high24h: metrics.high,
     low24h: metrics.low,
     volume24h: metrics.volume,
-    exchanges
+    exchanges,
+    dataSource: 'mock'
   }
   
   priceCache = silverPrice
@@ -427,7 +458,8 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
           change: parseFloat(change.toFixed(2)),
           changePercent: parseFloat(changePercent.toFixed(2)),
           premium: parseFloat(Math.max(0, premiumPercent).toFixed(2)),
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          dataSource: 'api'
         }
         
         chinaPriceCache = chinaSilverPrice
@@ -439,19 +471,20 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
       
       // Fall back to cached data
       if (cachedPrice) {
-        console.warn('Using stale cached China silver price data')
-        chinaPriceCache = cachedPrice
-        return cachedPrice
+        console.warn('[SilverAPI] Using stale cached China silver price data')
+        chinaPriceCache = { ...cachedPrice, dataSource: cachedPrice.dataSource || 'cache' as const }
+        return chinaPriceCache
       }
       
       if (chinaPriceCache) {
-        console.warn('Using memory cached China silver price data')
-        return chinaPriceCache
+        console.warn('[SilverAPI] Using memory cached China silver price data')
+        return { ...chinaPriceCache, dataSource: chinaPriceCache.dataSource || 'cache' as const }
       }
     }
   }
   
   // Generate realistic mock data with premium
+  console.log('[SilverAPI] Generating mock China price data')
   const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
   baseChinaPrice = Math.max(MIN_CHINA_PRICE, Math.min(MAX_CHINA_PRICE, baseChinaPrice + fluctuation))
   
@@ -468,7 +501,8 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
     change: parseFloat(change.toFixed(2)),
     changePercent: parseFloat(changePercent.toFixed(2)),
     premium: parseFloat(Math.max(0, premium).toFixed(2)),
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    dataSource: 'mock'
   }
   
   chinaPriceCache = chinaSilverPrice
