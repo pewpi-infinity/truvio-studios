@@ -124,6 +124,40 @@ Example `runtime.config.json`:
 
 ## Usage
 
+### Video Storage - Important Limitations
+
+**🔒 Local Storage Only**: Videos uploaded to Truvio Studios are stored in **IndexedDB** (browser-local storage) and are **NOT automatically shared** when you share your studio link.
+
+#### How Video Storage Works
+
+- **Video files** are stored in your browser's IndexedDB (client-side storage)
+- **Video metadata** (title, description, hashtags) is stored in GitHub Spark KV store
+- When you share your studio URL, **only the metadata is visible** to other users
+- Other users will **not** see the actual video files you've uploaded
+
+#### Limitations
+
+❌ **Cannot share videos** - Videos are stored locally and not accessible to others  
+❌ **Browser-specific** - Videos only appear in the browser where they were uploaded  
+❌ **Not persistent across devices** - Videos don't sync between your devices  
+❌ **Risk of data loss** - Clearing browser data will delete all videos  
+
+#### Workarounds
+
+1. **For Personal Use**: The current system works well for personal video organization and presentations on a single device
+2. **For Sharing**: Consider using video hosting services (YouTube, Vimeo) and linking to them instead
+3. **Export/Import** (Future): We plan to add export/import functionality to move videos between browsers
+
+#### Why This Limitation Exists
+
+This limitation is by design to keep the application simple and free from server hosting costs. Adding true video persistence would require:
+- Cloud storage integration (AWS S3, Cloudinary, etc.)
+- Server infrastructure for video processing
+- Authentication and authorization systems
+- Significant costs for storage and bandwidth
+
+If you need persistent video sharing, consider forking the repository and adding integration with a cloud storage provider.
+
 ### As a Studio Owner
 
 1. **Upload Videos**: Click "Upload Video" to add content

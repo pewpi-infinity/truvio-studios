@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { CloudArrowUp, MagnifyingGlass, Sparkle, Gear } from '@phosphor-icons/react'
+import { CloudArrowUp, MagnifyingGlass, Sparkle, Gear, Info } from '@phosphor-icons/react'
 import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -175,6 +175,18 @@ function App() {
                     {searchTerm ? `Search Results (${filteredVideos.length})` : `Your Videos (${videoList.length})`}
                   </h2>
                 </div>
+
+                {videoList.length > 0 && isOwner && (
+                  <div className="flex items-start gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-md">
+                    <Info size={20} className="text-blue-500 flex-shrink-0 mt-0.5" weight="fill" />
+                    <div className="text-sm text-blue-500">
+                      <p className="font-medium">Videos are stored locally in your browser</p>
+                      <p className="text-xs opacity-90 mt-1">
+                        Your uploaded videos are only visible on this device. They will not appear when you share this link with others.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {videoList.length === 0 ? (
                   <EmptyState onUploadClick={() => setUploadDialogOpen(true)} />

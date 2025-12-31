@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CloudArrowUp, X } from '@phosphor-icons/react'
+import { CloudArrowUp, X, Info } from '@phosphor-icons/react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -131,6 +131,17 @@ export function VideoUploadDialog({ open, onOpenChange, onUpload, userId }: Vide
             Upload Video
           </DialogTitle>
         </DialogHeader>
+
+        <div className="flex items-start gap-3 px-4 py-3 bg-blue-500/10 border border-blue-500/30 rounded-md">
+          <Info size={20} className="text-blue-500 flex-shrink-0 mt-0.5" weight="fill" />
+          <div className="text-sm text-blue-500">
+            <p className="font-medium mb-1">⚠️ Local Storage Only</p>
+            <p className="text-xs opacity-90">
+              Videos are stored in your browser and will <strong>not</strong> be accessible to others when you share your studio link. 
+              They are only visible on this device and browser. See README for details.
+            </p>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div
