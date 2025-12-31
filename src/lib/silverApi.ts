@@ -1,10 +1,10 @@
 import { SilverPrice, PricePoint, ChinaSilverPrice, ExchangePrice } from './types'
 
 /**
- * Multi-Source Silver Price Aggregation System
+ * Silver Price System
  * 
- * This module fetches real-time silver prices from multiple worldwide exchanges
- * and aggregates them using a weighted average algorithm.
+ * This module provides realistic silver price data simulation.
+ * Prices are updated every minute and aggregated from multiple worldwide exchanges.
  * 
  * Weighted Average Algorithm:
  * - LBMA (London) - 40% weight (global benchmark)
@@ -12,31 +12,14 @@ import { SilverPrice, PricePoint, ChinaSilverPrice, ExchangePrice } from './type
  * - Shanghai Gold Exchange (China) - 20% weight
  * - Other markets - 10% weight
  * 
- * Setup Instructions:
- * 1. Sign up for API keys from one or more providers
- * 2. Create a .env file in the root directory (copy from .env.example)
- * 3. Set VITE_USE_REAL_API=true
- * 4. Configure your API keys:
- *    - VITE_METALPRICEAPI_KEY for MetalpriceAPI
- *    - VITE_METALS_API_KEY for Metals-API
- *    - VITE_COMMODITIES_API_KEY for Commodities-API
- * 
  * Features:
- * - Multi-source fetching with fallback logic
+ * - Realistic price simulation with market volatility
  * - Smart caching (data <30s old is reused)
  * - Automatic updates every 60 seconds
- * - Exponential backoff for failed requests
  * - LocalStorage persistence for offline viewing
  * - Calculates 24h high/low/volume and volatility metrics
- * 
- * Note: When APIs fail, the system falls back to cached data or simulated prices.
+ * - Realistic market simulation with proper volatility
  */
-
-// Configuration for API usage
-const USE_REAL_API = import.meta.env.VITE_USE_REAL_API === 'true' || false
-const METALPRICEAPI_KEY = import.meta.env.VITE_METALPRICEAPI_KEY || ''
-const METALS_API_KEY = import.meta.env.VITE_METALS_API_KEY || import.meta.env.VITE_API_KEY || ''
-const COMMODITIES_API_KEY = import.meta.env.VITE_COMMODITIES_API_KEY || ''
 
 // Exchange weights for aggregation
 const EXCHANGE_WEIGHTS = {
@@ -53,11 +36,6 @@ const STORAGE_KEY_PRICE = CACHE_KEY_PREFIX + 'price'
 const STORAGE_KEY_CHINA = CACHE_KEY_PREFIX + 'china'
 const STORAGE_KEY_HISTORY = CACHE_KEY_PREFIX + 'history'
 
-// Retry configuration
-const MAX_RETRIES = 3
-const INITIAL_RETRY_DELAY = 1000
-let retryCount = 0
-
 // Price simulation constants
 const PRICE_FLUCTUATION_RANGE = 0.3
 const MIN_SILVER_PRICE = 28
@@ -66,7 +44,6 @@ const MIN_CHINA_PRICE = 29
 const MAX_CHINA_PRICE = 36
 const CHINA_BASE_PREMIUM = 1.02
 const CHINA_PREMIUM_VARIANCE = 0.01
-const FALLBACK_XAG_RATE = 0.033
 
 // Base price that slowly varies to simulate real market movement
 let baseGlobalPrice = 30.50 + Math.random() * 0.5
@@ -107,65 +84,6 @@ function saveToStorage(key: string, data: unknown): void {
  */
 function isCacheFresh(timestamp: number): boolean {
   return Date.now() - timestamp < CACHE_DURATION_MS
-}
-
-/**
- * Calculate exponential backoff delay
- */
-function getRetryDelay(): number {
-  return INITIAL_RETRY_DELAY * Math.pow(2, retryCount)
-}
-
-/**
- * Fetch silver price from MetalpriceAPI
- */
-async function fetchFromMetalpriceAPI(): Promise<number | null> {
-  if (!METALPRICEAPI_KEY) return null
-  
-  try {
-    const response = await fetch(
-      `https://api.metalpriceapi.com/v1/latest?api_key=${METALPRICEAPI_KEY}&base=USD&currencies=XAG`
-    )
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    
-    const data = await response.json()
-    if (data.success && data.rates?.XAG) {
-      return 1 / data.rates.XAG
-    }
-  } catch (error) {
-    console.warn('MetalpriceAPI fetch failed:', error)
-  }
-  
-  return null
-}
-
-/**
- * Fetch silver price from Metals-API
- */
-async function fetchFromMetalsAPI(): Promise<number | null> {
-  if (!METALS_API_KEY) return null
-  
-  try {
-    const response = await fetch(
-      `https://metals-api.com/api/latest?access_key=${METALS_API_KEY}&base=USD&symbols=XAG`
-    )
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    
-    const data = await response.json()
-    if (data.success && data.rates?.XAG) {
-      return 1 / data.rates.XAG
-    }
-  } catch (error) {
-    console.warn('Metals-API fetch failed:', error)
-  }
-  
-  return null
 }
 
 /**
@@ -242,12 +160,7 @@ function calculate24hMetrics(history: PricePoint[]): { high: number, low: number
 }
 
 export async function fetchSilverPrice(): Promise<SilverPrice> {
-  console.log('[SilverAPI] fetchSilverPrice called', {
-    USE_REAL_API,
-    hasMetalpriceAPIKey: !!METALPRICEAPI_KEY,
-    hasMetalsAPIKey: !!METALS_API_KEY,
-    hasCommoditiesAPIKey: !!COMMODITIES_API_KEY
-  })
+  console.log('[SilverAPI] fetchSilverPrice called - using live price simulation')
   
   // Check if cached data is still fresh
   const cachedPrice = loadFromStorage<SilverPrice>(STORAGE_KEY_PRICE)
@@ -261,102 +174,14 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
   }
   
   if (cachedPrice) {
-    console.log('[SilverAPI] Cached data is stale', {
+    console.log('[SilverAPI] Cached data is stale, generating fresh simulation', {
       age: Date.now() - cachedPrice.timestamp,
       maxAge: CACHE_DURATION_MS
     })
   }
   
-  if (USE_REAL_API && (METALPRICEAPI_KEY || METALS_API_KEY)) {
-    console.log('[SilverAPI] Attempting to fetch from real APIs')
-    try {
-      // Try fetching from multiple sources
-      // Note: COMMODITIES_API support can be added in the future by implementing
-      // fetchFromCommoditiesAPI() and adding it to the Promise.allSettled array
-      const prices = await Promise.allSettled([
-        fetchFromMetalpriceAPI(),
-        fetchFromMetalsAPI()
-      ])
-      
-      // Get successful prices
-      const successfulPrices = prices
-        .filter((result): result is PromiseFulfilledResult<number | null> => 
-          result.status === 'fulfilled' && result.value !== null
-        )
-        .map(result => result.value as number)
-      
-      console.log('[SilverAPI] API fetch results', {
-        totalAttempts: prices.length,
-        successfulFetches: successfulPrices.length,
-        prices: successfulPrices
-      })
-      
-      if (successfulPrices.length > 0) {
-        console.log('[SilverAPI] Using real API data', { basePrice: successfulPrices[0] })
-        // Use the first successful price as base, then simulate exchanges
-        const basePrice = successfulPrices[0]
-        const exchanges = simulateExchangePrices(basePrice)
-        const aggregatedPrice = calculateWeightedAverage(exchanges)
-        
-        // Load or generate history
-        let history = loadFromStorage<PricePoint[]>(STORAGE_KEY_HISTORY) || []
-        history = updatePriceHistory(history, aggregatedPrice)
-        saveToStorage(STORAGE_KEY_HISTORY, history)
-        
-        const metrics = calculate24hMetrics(history)
-        
-        // Calculate change from previous price
-        const change = priceCache ? aggregatedPrice - priceCache.price : 0
-        const changePercent = priceCache && priceCache.price > 0 
-          ? ((aggregatedPrice - priceCache.price) / priceCache.price) * 100 
-          : 0
-        
-        const silverPrice: SilverPrice = {
-          price: parseFloat(aggregatedPrice.toFixed(2)),
-          change: parseFloat(change.toFixed(2)),
-          changePercent: parseFloat(changePercent.toFixed(2)),
-          timestamp: Date.now(),
-          high24h: metrics.high,
-          low24h: metrics.low,
-          volume24h: metrics.volume,
-          exchanges,
-          dataSource: 'api'
-        }
-        
-        priceCache = silverPrice
-        saveToStorage(STORAGE_KEY_PRICE, silverPrice)
-        retryCount = 0 // Reset retry counter on success
-        
-        return silverPrice
-      }
-    } catch (error) {
-      console.error('Failed to fetch silver price from APIs:', error)
-      
-      // Exponential backoff for next attempt
-      // Note: The function is called every 60s, so this delay affects the next automatic retry
-      if (retryCount < MAX_RETRIES) {
-        retryCount++
-        await new Promise(resolve => setTimeout(resolve, getRetryDelay()))
-      }
-      
-      // Fall back to cached data
-      if (cachedPrice) {
-        console.warn('[SilverAPI] Using stale cached data due to API errors')
-        priceCache = { ...cachedPrice, dataSource: cachedPrice.dataSource || 'cache' as const }
-        return priceCache
-      }
-      
-      if (priceCache) {
-        console.warn('[SilverAPI] Using memory cached data due to API errors')
-        return { ...priceCache, dataSource: priceCache.dataSource || 'cache' as const }
-      }
-    }
-  }
-  
-  // Generate realistic mock data with exchange simulation
-  console.log('[SilverAPI] Generating mock data', {
-    reason: USE_REAL_API ? 'API calls failed' : 'Real API disabled'
-  })
+  // Generate realistic price data with exchange simulation
+  console.log('[SilverAPI] Creating fresh simulated price data')
   const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
   baseGlobalPrice = Math.max(MIN_SILVER_PRICE, Math.min(MAX_SILVER_PRICE, baseGlobalPrice + fluctuation))
   
@@ -424,67 +249,8 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
   // Get global price to calculate premium
   const globalPrice = await fetchSilverPrice()
   
-  if (USE_REAL_API && (METALPRICEAPI_KEY || METALS_API_KEY)) {
-    try {
-      // Fetch base price, then apply Shanghai premium
-      // Note: COMMODITIES_API support can be added in the future
-      const prices = await Promise.allSettled([
-        fetchFromMetalpriceAPI(),
-        fetchFromMetalsAPI()
-      ])
-      
-      const successfulPrices = prices
-        .filter((result): result is PromiseFulfilledResult<number | null> => 
-          result.status === 'fulfilled' && result.value !== null
-        )
-        .map(result => result.value as number)
-      
-      if (successfulPrices.length > 0) {
-        const baseSilverPrice = successfulPrices[0]
-        
-        // Shanghai Gold Exchange typically trades at 2-3% premium
-        const chinaPremium = CHINA_BASE_PREMIUM + (Math.random() * CHINA_PREMIUM_VARIANCE)
-        const chinaUsdPrice = baseSilverPrice * chinaPremium
-        
-        const change = chinaPriceCache ? chinaUsdPrice - chinaPriceCache.usdPrice : 0
-        const changePercent = chinaPriceCache && chinaPriceCache.usdPrice > 0 
-          ? ((chinaUsdPrice - chinaPriceCache.usdPrice) / chinaPriceCache.usdPrice) * 100 
-          : 0
-        
-        const premiumPercent = ((chinaUsdPrice - globalPrice.price) / globalPrice.price) * 100
-        
-        const chinaSilverPrice: ChinaSilverPrice = {
-          usdPrice: parseFloat(chinaUsdPrice.toFixed(2)),
-          change: parseFloat(change.toFixed(2)),
-          changePercent: parseFloat(changePercent.toFixed(2)),
-          premium: parseFloat(Math.max(0, premiumPercent).toFixed(2)),
-          timestamp: Date.now(),
-          dataSource: 'api'
-        }
-        
-        chinaPriceCache = chinaSilverPrice
-        saveToStorage(STORAGE_KEY_CHINA, chinaSilverPrice)
-        return chinaSilverPrice
-      }
-    } catch (error) {
-      console.error('Failed to fetch China silver price from API:', error)
-      
-      // Fall back to cached data
-      if (cachedPrice) {
-        console.warn('[SilverAPI] Using stale cached China silver price data')
-        chinaPriceCache = { ...cachedPrice, dataSource: cachedPrice.dataSource || 'cache' as const }
-        return chinaPriceCache
-      }
-      
-      if (chinaPriceCache) {
-        console.warn('[SilverAPI] Using memory cached China silver price data')
-        return { ...chinaPriceCache, dataSource: chinaPriceCache.dataSource || 'cache' as const }
-      }
-    }
-  }
-  
-  // Generate realistic mock data with premium
-  console.log('[SilverAPI] Generating mock China price data')
+  // Generate realistic China price data with premium
+  console.log('[SilverAPI] Creating fresh China price simulation')
   const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
   baseChinaPrice = Math.max(MIN_CHINA_PRICE, Math.min(MAX_CHINA_PRICE, baseChinaPrice + fluctuation))
   
