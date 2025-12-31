@@ -1,0 +1,14 @@
+{
+  "token_id": "∞_truvio-studios_20251231_011106",
+  "repo": "truvio-studios",
+  "created": "20251231_011106",
+  "owner": "Kris Watson",
+  "mode": "ADMIN",
+  "token_price_usd": "125.17",
+  "index_price_usd": "401.29",
+  "paypal": "https://www.paypal.me/watsonkris611",
+  "transfer": {
+    "on_purchase": "auto",
+    "on_grant": "manual"
+  }
+}
