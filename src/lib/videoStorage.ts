@@ -79,7 +79,9 @@ export async function storeVideo(
 }
 
 /**
- * Retrieve a video from IndexedDB and create a persistent blob URL
+ * Retrieve a video from IndexedDB and create a blob URL for playback
+ * Note: The returned blob URL must be revoked using URL.revokeObjectURL() 
+ * when no longer needed to prevent memory leaks.
  */
 export async function getVideoUrl(id: string): Promise<string | null> {
   const db = await openDB()
@@ -93,7 +95,8 @@ export async function getVideoUrl(id: string): Promise<string | null> {
     request.onsuccess = () => {
       const result = request.result as StoredVideo | undefined
       if (result?.videoBlob) {
-        // Create a blob URL that will persist as long as the page is open
+        // Create a blob URL for playback
+        // Caller is responsible for revoking this URL when done
         const url = URL.createObjectURL(result.videoBlob)
         resolve(url)
       } else {

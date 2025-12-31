@@ -96,12 +96,12 @@ export function VideoUploadDialog({ open, onOpenChange, onUpload, userId }: Vide
       })
 
       // Create video metadata to store in KV
-      // The actual video URL will be loaded from IndexedDB when needed
+      // Empty videoUrl indicates the video is stored in IndexedDB and will be loaded dynamically
       const newVideo: Video = {
         id: videoId,
         title: title.trim(),
         description: description.trim(),
-        videoUrl: '', // Will be loaded from IndexedDB
+        videoUrl: '', // Empty string indicates IndexedDB storage
         thumbnailUrl,
         hashtags,
         createdAt: Date.now(),

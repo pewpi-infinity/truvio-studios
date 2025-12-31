@@ -24,10 +24,13 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
 
   // Load video URL from IndexedDB when component mounts or video changes
   useEffect(() => {
+    let currentBlobUrl: string | null = null
+    
     const loadVideoUrl = async () => {
       if (!video.videoUrl || video.videoUrl === '') {
         const url = await getVideoUrl(video.id)
         if (url) {
+          currentBlobUrl = url
           setVideoUrl(url)
         }
       } else {
@@ -37,10 +40,10 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
     
     loadVideoUrl()
     
-    // Cleanup: revoke blob URL when component unmounts
+    // Cleanup: revoke blob URL when component unmounts to prevent memory leaks
     return () => {
-      if (videoUrl && videoUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(videoUrl)
+      if (currentBlobUrl && currentBlobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(currentBlobUrl)
       }
     }
   }, [video.id, video.videoUrl])

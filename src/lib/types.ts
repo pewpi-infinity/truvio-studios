@@ -2,7 +2,7 @@ export interface Video {
   id: string
   title: string
   description: string
-  videoUrl: string
+  videoUrl: string  // Empty string indicates video is stored in IndexedDB
   thumbnailUrl?: string
   hashtags: string[]
   createdAt: number

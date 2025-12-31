@@ -34,6 +34,8 @@ const MIN_CHINA_PRICE = 29
 const MAX_CHINA_PRICE = 36
 const CHINA_BASE_PREMIUM = 1.02
 const CHINA_PREMIUM_VARIANCE = 0.01
+// Fallback XAG rate (approximately 1/30 USD per ounce, representing ~$30/oz silver price)
+const FALLBACK_XAG_RATE = 0.033
 
 // Cache for storing the last successful price data
 let priceCache: SilverPrice | null = null
@@ -65,7 +67,7 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
       
       // Metals-API returns rates where 1 XAG = X USD
       // We need to invert this to get USD per ounce
-      const silverPricePerOunce = 1 / (data.rates?.XAG || 0.033) // ~30 USD per ounce
+      const silverPricePerOunce = 1 / (data.rates?.XAG || FALLBACK_XAG_RATE)
       
       // Calculate change from cached price
       const change = priceCache ? silverPricePerOunce - priceCache.price : 0
@@ -134,7 +136,7 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
       
       // Metals-API returns rates where 1 XAG = X USD
       // We need to invert this to get USD per ounce
-      const baseSilverPrice = 1 / (data.rates?.XAG || 0.033)
+      const baseSilverPrice = 1 / (data.rates?.XAG || FALLBACK_XAG_RATE)
       
       // Shanghai Gold Exchange (SGE) silver typically trades at a premium
       // Premium ranges from 1% to 3% above international spot prices
