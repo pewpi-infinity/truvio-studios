@@ -235,7 +235,7 @@ function calculate24hMetrics(history: PricePoint[]): { high: number, low: number
   const low = Math.min(...prices)
   
   // Simulate volume based on price volatility
-  const volatility = (high - low) / low
+  const volatility = low > 0 ? (high - low) / low : 0
   const volume = Math.round(volatility * 1000000 * (1 + Math.random() * 0.5))
   
   return { high, low, volume }
@@ -249,9 +249,11 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
     return cachedPrice
   }
   
-  if (USE_REAL_API && (METALPRICEAPI_KEY || METALS_API_KEY || COMMODITIES_API_KEY)) {
+  if (USE_REAL_API && (METALPRICEAPI_KEY || METALS_API_KEY)) {
     try {
       // Try fetching from multiple sources
+      // Note: COMMODITIES_API support can be added in the future by implementing
+      // fetchFromCommoditiesAPI() and adding it to the Promise.allSettled array
       const prices = await Promise.allSettled([
         fetchFromMetalpriceAPI(),
         fetchFromMetalsAPI()
@@ -303,7 +305,8 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
     } catch (error) {
       console.error('Failed to fetch silver price from APIs:', error)
       
-      // Exponential backoff
+      // Exponential backoff for next attempt
+      // Note: The function is called every 60s, so this delay affects the next automatic retry
       if (retryCount < MAX_RETRIES) {
         retryCount++
         await new Promise(resolve => setTimeout(resolve, getRetryDelay()))
@@ -393,6 +396,7 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
   if (USE_REAL_API && (METALPRICEAPI_KEY || METALS_API_KEY)) {
     try {
       // Fetch base price, then apply Shanghai premium
+      // Note: COMMODITIES_API support can be added in the future
       const prices = await Promise.allSettled([
         fetchFromMetalpriceAPI(),
         fetchFromMetalsAPI()

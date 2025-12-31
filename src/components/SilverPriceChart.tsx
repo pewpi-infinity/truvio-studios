@@ -165,7 +165,7 @@ export function SilverPriceChart() {
       .on('mousemove', (event) => {
         const [mouseX] = d3.pointer(event)
         const x0 = xScale.invert(mouseX)
-        const bisect = d3.bisector<PricePoint, Date>((d) => d.time).left
+    const bisect = d3.bisector<PricePoint, number>((d) => d.time).left
         const idx = bisect(data, x0.getTime())
         const d = data[idx]
         
@@ -256,7 +256,7 @@ export function SilverPriceChart() {
       <svg ref={svgRef} className="w-full"></svg>
       <div 
         ref={tooltipRef}
-        className="absolute hidden bg-card border border-border rounded-lg px-3 py-2 shadow-lg pointer-events-none z-10"
+        className="absolute bg-card border border-border rounded-lg px-3 py-2 shadow-lg pointer-events-none z-10"
         style={{ display: 'none' }}
       />
     </motion.div>
