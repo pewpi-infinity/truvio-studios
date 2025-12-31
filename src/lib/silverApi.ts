@@ -174,14 +174,14 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
   }
   
   if (cachedPrice) {
-    console.log('[SilverAPI] Cached data is stale, generating new price', {
+    console.log('[SilverAPI] Cached data is stale, generating fresh simulation', {
       age: Date.now() - cachedPrice.timestamp,
       maxAge: CACHE_DURATION_MS
     })
   }
   
   // Generate realistic price data with exchange simulation
-  console.log('[SilverAPI] Generating live simulated price data')
+  console.log('[SilverAPI] Creating fresh simulated price data')
   const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
   baseGlobalPrice = Math.max(MIN_SILVER_PRICE, Math.min(MAX_SILVER_PRICE, baseGlobalPrice + fluctuation))
   
@@ -250,7 +250,7 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
   const globalPrice = await fetchSilverPrice()
   
   // Generate realistic China price data with premium
-  console.log('[SilverAPI] Generating live China price data')
+  console.log('[SilverAPI] Creating fresh China price simulation')
   const fluctuation = (Math.random() - 0.5) * PRICE_FLUCTUATION_RANGE
   baseChinaPrice = Math.max(MIN_CHINA_PRICE, Math.min(MAX_CHINA_PRICE, baseChinaPrice + fluctuation))
   

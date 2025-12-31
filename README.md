@@ -37,7 +37,7 @@ npm run build
 
 ### Silver Price Data
 
-The application displays silver price data and charts using a **multi-index aggregation system** that simulates prices from worldwide exchanges with realistic market behavior.
+The application displays silver price data and charts using a **multi-exchange simulation system** that simulates prices from worldwide exchanges with realistic market behavior.
 
 #### Multi-Index Aggregation Algorithm
 
