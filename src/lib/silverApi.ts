@@ -1,5 +1,25 @@
 import { SilverPrice, PricePoint, ChinaSilverPrice } from './types'
 
+/**
+ * Silver Price API Integration
+ * 
+ * This module fetches real-time silver prices from Metals-API.com
+ * 
+ * Setup Instructions:
+ * 1. Sign up for a free API key at https://metals-api.com/
+ * 2. Create a .env file in the root directory (copy from .env.example)
+ * 3. Set VITE_USE_REAL_API=true
+ * 4. Set VITE_API_KEY=your_api_key_here
+ * 
+ * Alternative API Providers:
+ * - GoldAPI.io: https://www.goldapi.io/ (100 requests/month free)
+ * - MetalpriceAPI: https://metalpriceapi.com/ (Multiple currencies)
+ * - CoinGecko: https://www.coingecko.com/en/api (Free tier available)
+ * 
+ * Note: When real API is disabled or fails, the system falls back to
+ * cached data (if available) or simulated market data for demonstration.
+ */
+
 // Configuration for API usage
 // Set USE_REAL_API to true and configure API_KEY to use real data
 // IMPORTANT: Use environment variables in production to avoid exposing API keys
@@ -26,7 +46,9 @@ let baseChinaPrice = 31.20 + Math.random() * 0.5
 export async function fetchSilverPrice(): Promise<SilverPrice> {
   if (USE_REAL_API && API_KEY) {
     try {
-      // Example using metals-api.com - adjust endpoint based on your chosen provider
+      // Using metals-api.com as the recommended provider
+      // The API returns silver price in troy ounces (XAG)
+      // Base is USD, so we get XAG/USD (silver price in USD per troy ounce)
       const response = await fetch(
         `https://metals-api.com/api/latest?access_key=${API_KEY}&base=USD&symbols=XAG`
       )
@@ -37,15 +59,22 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
       
       const data = await response.json()
       
+      if (!data.success) {
+        throw new Error(data.error?.info || 'API request failed')
+      }
+      
+      // Metals-API returns rates where 1 XAG = X USD
+      // We need to invert this to get USD per ounce
+      const silverPricePerOunce = 1 / (data.rates?.XAG || 0.033) // ~30 USD per ounce
+      
       // Calculate change from cached price
-      const price = data.rates?.USDXAG || data.price || 0
-      const change = priceCache ? price - priceCache.price : 0
+      const change = priceCache ? silverPricePerOunce - priceCache.price : 0
       const changePercent = priceCache && priceCache.price > 0 
-        ? ((price - priceCache.price) / priceCache.price) * 100 
+        ? ((silverPricePerOunce - priceCache.price) / priceCache.price) * 100 
         : 0
       
       const silverPrice: SilverPrice = {
-        price: parseFloat(price.toFixed(2)),
+        price: parseFloat(silverPricePerOunce.toFixed(2)),
         change: parseFloat(change.toFixed(2)),
         changePercent: parseFloat(changePercent.toFixed(2)),
         timestamp: Date.now()
@@ -55,7 +84,11 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
       return silverPrice
     } catch (error) {
       console.error('Failed to fetch silver price from API:', error)
-      // Fall through to mock data on error
+      // Fall back to cached data if available, otherwise use mock data
+      if (priceCache) {
+        console.warn('Using cached silver price data')
+        return priceCache
+      }
     }
   }
   
@@ -84,7 +117,7 @@ export async function fetchSilverPrice(): Promise<SilverPrice> {
 export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
   if (USE_REAL_API && API_KEY) {
     try {
-      // Fetch silver price in USD
+      // Fetch silver price in USD using metals-api.com
       const response = await fetch(
         `https://metals-api.com/api/latest?access_key=${API_KEY}&base=USD&symbols=XAG`
       )
@@ -94,12 +127,20 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
       }
       
       const data = await response.json()
-      const basePrice = data.rates?.USDXAG || data.price || 0
       
-      // Shanghai silver typically trades at a small premium to global markets
-      // Adding a realistic 1-3% premium for China market
+      if (!data.success) {
+        throw new Error(data.error?.info || 'API request failed')
+      }
+      
+      // Metals-API returns rates where 1 XAG = X USD
+      // We need to invert this to get USD per ounce
+      const baseSilverPrice = 1 / (data.rates?.XAG || 0.033)
+      
+      // Shanghai Gold Exchange (SGE) silver typically trades at a premium
+      // Premium ranges from 1% to 3% above international spot prices
+      // This accounts for import costs, local demand, and market dynamics
       const chinaPremium = CHINA_BASE_PREMIUM + (Math.random() * CHINA_PREMIUM_VARIANCE)
-      const chinaUsdPrice = basePrice * chinaPremium
+      const chinaUsdPrice = baseSilverPrice * chinaPremium
       
       const change = chinaPriceCache ? chinaUsdPrice - chinaPriceCache.usdPrice : 0
       const changePercent = chinaPriceCache && chinaPriceCache.usdPrice > 0 
@@ -118,7 +159,11 @@ export async function fetchChinaSilverPrice(): Promise<ChinaSilverPrice> {
       return chinaSilverPrice
     } catch (error) {
       console.error('Failed to fetch China silver price from API:', error)
-      // Fall through to mock data on error
+      // Fall back to cached data if available, otherwise use mock data
+      if (chinaPriceCache) {
+        console.warn('Using cached China silver price data')
+        return chinaPriceCache
+      }
     }
   }
   
