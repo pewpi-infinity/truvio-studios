@@ -21,6 +21,13 @@ function getRepoInfo(): { owner: string; repo: string } | null {
 }
 
 /**
+ * Get the base path for URLs
+ */
+function getBasePath(): string {
+  return import.meta.env.BASE_URL || '/truvio-studios/'
+}
+
+/**
  * Convert File to base64
  */
 async function fileToBase64(file: File): Promise<string> {
@@ -161,7 +168,7 @@ export async function storeVideo(
  */
 export async function getVideoUrl(videoPath: string): Promise<string | null> {
   // Return the path relative to the base URL
-  const basePath = import.meta.env.BASE_URL || '/truvio-studios/'
+  const basePath = getBasePath()
   return `${basePath}${videoPath}`
 }
 
@@ -169,7 +176,7 @@ export async function getVideoUrl(videoPath: string): Promise<string | null> {
  * Get thumbnail URL from repository
  */
 export async function getVideoThumbnail(thumbnailPath: string): Promise<string | null> {
-  const basePath = import.meta.env.BASE_URL || '/truvio-studios/'
+  const basePath = getBasePath()
   return `${basePath}${thumbnailPath}`
 }
 
@@ -206,6 +213,9 @@ export async function deleteVideo(videoPath: string, thumbnailPath: string): Pro
       commit_sha: currentCommitSha
     })
 
+    // Extract video ID from path for better commit message
+    const videoId = videoPath.split('/').pop()?.split('.')[0] || 'unknown'
+
     // Create a new tree without the video and thumbnail files
     const { data: newTree } = await octokit.rest.git.createTree({
       owner: repoInfo.owner,
@@ -216,13 +226,13 @@ export async function deleteVideo(videoPath: string, thumbnailPath: string): Pro
           path: videoPath,
           mode: '100644',
           type: 'blob',
-          sha: null as any // This deletes the file
+          sha: null
         },
         {
           path: thumbnailPath,
           mode: '100644',
           type: 'blob',
-          sha: null as any
+          sha: null
         }
       ]
     })
@@ -231,7 +241,7 @@ export async function deleteVideo(videoPath: string, thumbnailPath: string): Pro
     const { data: newCommit } = await octokit.rest.git.createCommit({
       owner: repoInfo.owner,
       repo: repoInfo.repo,
-      message: `Delete video files`,
+      message: `Delete video: ${videoId}`,
       tree: newTree.sha,
       parents: [currentCommitSha]
     })

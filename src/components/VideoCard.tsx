@@ -26,9 +26,10 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
   // Load video and thumbnail URLs
   useEffect(() => {
     const loadUrls = async () => {
+      const basePath = import.meta.env.BASE_URL || '/truvio-studios/'
+      
       // If videoUrl is a path (not a blob URL), construct the full URL
       if (video.videoUrl && !video.videoUrl.startsWith('blob:')) {
-        const basePath = import.meta.env.BASE_URL || '/truvio-studios/'
         setVideoUrl(`${basePath}${video.videoUrl}`)
       } else {
         setVideoUrl(video.videoUrl)
@@ -36,7 +37,6 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
 
       // Same for thumbnail
       if (video.thumbnailUrl && !video.thumbnailUrl.startsWith('data:')) {
-        const basePath = import.meta.env.BASE_URL || '/truvio-studios/'
         setThumbnailUrl(`${basePath}${video.thumbnailUrl}`)
       } else {
         setThumbnailUrl(video.thumbnailUrl || '')
