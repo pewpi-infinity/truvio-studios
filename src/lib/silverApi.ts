@@ -3,8 +3,8 @@ import { SilverPrice, PricePoint, ChinaSilverPrice, ExchangePrice } from './type
 /**
  * Silver Price System
  * 
- * This module provides real-time silver price data using live Google search.
- * Prices are fetched every minute and aggregated from multiple worldwide exchanges.
+ * This module provides realistic silver price data simulation.
+ * Prices are updated every minute and aggregated from multiple worldwide exchanges.
  * 
  * Weighted Average Algorithm:
  * - LBMA (London) - 40% weight (global benchmark)
@@ -13,7 +13,7 @@ import { SilverPrice, PricePoint, ChinaSilverPrice, ExchangePrice } from './type
  * - Other markets - 10% weight
  * 
  * Features:
- * - Live Google search for current silver prices
+ * - Realistic price simulation with market volatility
  * - Smart caching (data <30s old is reused)
  * - Automatic updates every 60 seconds
  * - LocalStorage persistence for offline viewing
