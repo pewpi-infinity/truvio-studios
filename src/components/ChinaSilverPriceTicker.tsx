@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { TrendUp, TrendDown, Globe } from '@phosphor-icons/react'
+import { TrendUp, TrendDown, Globe, Warning } from '@phosphor-icons/react'
 import { fetchChinaSilverPrice, fetchSilverPrice } from '@/lib/silverApi'
 import { ChinaSilverPrice } from '@/lib/types'
 import { formatPrice, formatPriceChange } from '@/lib/helpers'
@@ -43,9 +43,18 @@ export function ChinaSilverPriceTicker() {
 
   const isPositive = price.change >= 0
   const priceChanged = prevPrice !== null && price.usdPrice !== prevPrice
+  const isSimulatedData = price.dataSource === 'mock'
 
   return (
     <div className="bg-gradient-to-br from-card to-secondary border border-border rounded-lg px-6 py-4 shadow-lg">
+      {isSimulatedData && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
+          <Warning size={16} className="text-yellow-500" weight="fill" />
+          <span className="text-xs text-yellow-500 font-medium">
+            Showing simulated data. Configure API keys in .env to use real market data.
+          </span>
+        </div>
+      )}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-3">

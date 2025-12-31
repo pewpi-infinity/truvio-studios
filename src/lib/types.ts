@@ -18,6 +18,7 @@ export interface SilverPrice {
   low24h?: number
   volume24h?: number
   exchanges?: ExchangePrice[]
+  dataSource?: 'api' | 'cache' | 'mock'  // Track data source
 }
 
 export interface ExchangePrice {
@@ -34,6 +35,7 @@ export interface ChinaSilverPrice {
   changePercent: number
   premium: number
   timestamp: number
+  dataSource?: 'api' | 'cache' | 'mock'  // Track data source
 }
 
 export interface PricePoint {

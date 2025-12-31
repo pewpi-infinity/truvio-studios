@@ -1,22 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { motion } from 'framer-motion'
-import { Eye, EyeSlash } from '@phosphor-icons/react'
+import { Eye, EyeSlash, Warning } from '@phosphor-icons/react'
 import { fetchSilverPrice, generateMockPriceHistory } from '@/lib/silverApi'
-import { PricePoint } from '@/lib/types'
+import { PricePoint, SilverPrice } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 
 export function SilverPriceChart() {
   const svgRef = useRef<SVGSVGElement>(null)
   const [data, setData] = useState<PricePoint[]>([])
   const [showExchanges, setShowExchanges] = useState(false)
+  const [currentPrice, setCurrentPrice] = useState<SilverPrice | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const loadData = async () => {
-      const currentPrice = await fetchSilverPrice()
-      const history = generateMockPriceHistory(currentPrice.price, 24)
+      const priceData = await fetchSilverPrice()
+      setCurrentPrice(priceData)
+      const history = generateMockPriceHistory(priceData.price, 24)
       setData(history)
     }
 
@@ -253,6 +255,14 @@ export function SilverPriceChart() {
           {showExchanges ? 'Hide' : 'Show'} Exchanges
         </Button>
       </div>
+      {currentPrice?.dataSource === 'mock' && (
+        <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
+          <Warning size={16} className="text-yellow-500" weight="fill" />
+          <span className="text-xs text-yellow-500 font-medium">
+            Chart shows simulated data. Configure API keys to display real market data.
+          </span>
+        </div>
+      )}
       <svg ref={svgRef} className="w-full"></svg>
       <div 
         ref={tooltipRef}
