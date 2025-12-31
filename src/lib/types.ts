@@ -14,6 +14,18 @@ export interface SilverPrice {
   change: number
   changePercent: number
   timestamp: number
+  high24h?: number
+  low24h?: number
+  volume24h?: number
+  exchanges?: ExchangePrice[]
+}
+
+export interface ExchangePrice {
+  exchange: string
+  price: number
+  weight: number
+  active: boolean
+  timestamp: number
 }
 
 export interface ChinaSilverPrice {
@@ -27,4 +39,5 @@ export interface ChinaSilverPrice {
 export interface PricePoint {
   time: number
   price: number
+  exchanges?: { [key: string]: number }
 }
