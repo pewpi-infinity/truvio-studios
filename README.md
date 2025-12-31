@@ -124,39 +124,30 @@ Example `runtime.config.json`:
 
 ## Usage
 
-### Video Storage - Important Limitations
+### Video Storage
 
-**🔒 Local Storage Only**: Videos uploaded to Truvio Studios are stored in **IndexedDB** (browser-local storage) and are **NOT automatically shared** when you share your studio link.
+Videos uploaded to Truvio Studios are **automatically committed to the repository** in the `public/videos` directory.
 
 #### How Video Storage Works
 
-- **Video files** are stored in your browser's IndexedDB (client-side storage)
+- **Video files** are stored in `public/videos/` directory in the repository
+- **Thumbnail images** are stored in `public/thumbnails/` directory
 - **Video metadata** (title, description, hashtags) is stored in GitHub Spark KV store
-- When you share your studio URL, **only the metadata is visible** to other users
-- Other users will **not** see the actual video files you've uploaded
+- When you upload a video, it's automatically committed to the main branch
+- Videos are accessible to anyone viewing your deployed site
 
-#### Limitations
+#### Features
 
-❌ **Cannot share videos** - Videos are stored locally and not accessible to others  
-❌ **Browser-specific** - Videos only appear in the browser where they were uploaded  
-❌ **Not persistent across devices** - Videos don't sync between your devices  
-❌ **Risk of data loss** - Clearing browser data will delete all videos  
+✅ **Persistent storage** - Videos are committed to Git and persist across deployments  
+✅ **Shareable** - Anyone with your studio URL can view the videos  
+✅ **Version controlled** - All videos are tracked in Git history  
+✅ **No external dependencies** - No need for cloud storage services  
 
-#### Workarounds
+#### Requirements
 
-1. **For Personal Use**: The current system works well for personal video organization and presentations on a single device
-2. **For Sharing**: Consider using video hosting services (YouTube, Vimeo) and linking to them instead
-3. **Export/Import** (Future): We plan to add export/import functionality to move videos between browsers
-
-#### Why This Limitation Exists
-
-This limitation is by design to keep the application simple and free from server hosting costs. Adding true video persistence would require:
-- Cloud storage integration (AWS S3, Cloudinary, etc.)
-- Server infrastructure for video processing
-- Authentication and authorization systems
-- Significant costs for storage and bandwidth
-
-If you need persistent video sharing, consider forking the repository and adding integration with a cloud storage provider.
+- GitHub authentication (automatically handled by Spark)
+- Write access to the repository
+- Videos are limited by GitHub repository size constraints (recommended < 100MB per video)
 
 ### As a Studio Owner
 

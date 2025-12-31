@@ -2,8 +2,8 @@ export interface Video {
   id: string
   title: string
   description: string
-  videoUrl: string  // Empty string indicates video is stored in IndexedDB
-  thumbnailUrl?: string
+  videoUrl: string  // Path to video file in repository (e.g., 'public/videos/video-123.mp4')
+  thumbnailUrl?: string  // Path to thumbnail in repository (e.g., 'public/thumbnails/video-123.png')
   hashtags: string[]
   createdAt: number
   ownerId: string

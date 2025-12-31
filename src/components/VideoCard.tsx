@@ -21,36 +21,36 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
   const [isPlaying, setIsPlaying] = useState(false)
   const [showVideo, setShowVideo] = useState(false)
   const [videoUrl, setVideoUrl] = useState<string>(video.videoUrl)
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>(video.thumbnailUrl || '')
 
-  // Load video URL from IndexedDB when component mounts or video changes
+  // Load video and thumbnail URLs
   useEffect(() => {
-    let currentBlobUrl: string | null = null
-    
-    const loadVideoUrl = async () => {
-      if (!video.videoUrl || video.videoUrl === '') {
-        const url = await getVideoUrl(video.id)
-        if (url) {
-          currentBlobUrl = url
-          setVideoUrl(url)
-        }
+    const loadUrls = async () => {
+      // If videoUrl is a path (not a blob URL), construct the full URL
+      if (video.videoUrl && !video.videoUrl.startsWith('blob:')) {
+        const basePath = import.meta.env.BASE_URL || '/truvio-studios/'
+        setVideoUrl(`${basePath}${video.videoUrl}`)
       } else {
         setVideoUrl(video.videoUrl)
       }
-    }
-    
-    loadVideoUrl()
-    
-    // Cleanup: revoke blob URL when component unmounts to prevent memory leaks
-    return () => {
-      if (currentBlobUrl && currentBlobUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(currentBlobUrl)
+
+      // Same for thumbnail
+      if (video.thumbnailUrl && !video.thumbnailUrl.startsWith('data:')) {
+        const basePath = import.meta.env.BASE_URL || '/truvio-studios/'
+        setThumbnailUrl(`${basePath}${video.thumbnailUrl}`)
+      } else {
+        setThumbnailUrl(video.thumbnailUrl || '')
       }
     }
-  }, [video.id, video.videoUrl])
+    
+    loadUrls()
+  }, [video.id, video.videoUrl, video.thumbnailUrl])
 
   const handleDelete = async () => {
-    // Delete from IndexedDB as well
-    await deleteVideoFromStorage(video.id)
+    // Delete from repository
+    if (video.videoUrl && video.thumbnailUrl) {
+      await deleteVideoFromStorage(video.videoUrl, video.thumbnailUrl)
+    }
     onDelete(video.id)
   }
 
@@ -87,9 +87,9 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
             />
           ) : (
             <>
-              {video.thumbnailUrl ? (
+              {thumbnailUrl ? (
                 <img 
-                  src={video.thumbnailUrl} 
+                  src={thumbnailUrl} 
                   alt={video.title}
                   className="w-full h-full object-cover"
                 />
