@@ -17,6 +17,7 @@ import { PresentationContextDialog } from '@/components/PresentationContextDialo
 import { BuildYourOwnBanner } from '@/components/BuildYourOwnBanner'
 import { Video } from '@/lib/types'
 import { toast } from 'sonner'
+import runtimeConfig from '../runtime.config.json'
 
 function App() {
   const [videos, setVideos] = useKV<Video[]>('truvio-videos', [])
@@ -25,7 +26,9 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('')
   const [userId, setUserId] = useState('')
   const [isOwner, setIsOwner] = useState(false)
-  const [presentationContext, setPresentationContext] = useKV<string>('presentation-context', 'Silver')
+  // Read default presentation context from runtime.config.json
+  const defaultContext = (runtimeConfig as { presentationContext?: string }).presentationContext || 'Silver'
+  const [presentationContext, setPresentationContext] = useKV<string>('presentation-context', defaultContext)
 
   useEffect(() => {
     const loadUser = async () => {
@@ -68,7 +71,9 @@ function App() {
 
   const handleContextChange = (newContext: string) => {
     setPresentationContext(newContext)
-    toast.success(`Presentation context changed to: ${newContext}`)
+    toast.success(`Presentation context changed to: ${newContext}`, {
+      description: 'Note: To persist this change across deployments, update runtime.config.json in the repository'
+    })
   }
 
   const videoList = videos || []

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Trash, Hash } from '@phosphor-icons/react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Video } from '@/lib/types'
 import { parseHashtagsInText } from '@/lib/helpers'
+import { getVideoUrl, deleteVideo as deleteVideoFromStorage } from '@/lib/videoStorage'
 
 interface VideoCardProps {
   video: Video
@@ -19,6 +20,39 @@ interface VideoCardProps {
 export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm }: VideoCardProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [showVideo, setShowVideo] = useState(false)
+  const [videoUrl, setVideoUrl] = useState<string>(video.videoUrl)
+
+  // Load video URL from IndexedDB when component mounts or video changes
+  useEffect(() => {
+    let currentBlobUrl: string | null = null
+    
+    const loadVideoUrl = async () => {
+      if (!video.videoUrl || video.videoUrl === '') {
+        const url = await getVideoUrl(video.id)
+        if (url) {
+          currentBlobUrl = url
+          setVideoUrl(url)
+        }
+      } else {
+        setVideoUrl(video.videoUrl)
+      }
+    }
+    
+    loadVideoUrl()
+    
+    // Cleanup: revoke blob URL when component unmounts to prevent memory leaks
+    return () => {
+      if (currentBlobUrl && currentBlobUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(currentBlobUrl)
+      }
+    }
+  }, [video.id, video.videoUrl])
+
+  const handleDelete = async () => {
+    // Delete from IndexedDB as well
+    await deleteVideoFromStorage(video.id)
+    onDelete(video.id)
+  }
 
   const isHighlighted = searchTerm && (
     video.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,7 +78,7 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
         <div className="relative aspect-video bg-secondary">
           {showVideo ? (
             <video
-              src={video.videoUrl}
+              src={videoUrl}
               controls
               autoPlay={isPlaying}
               className="w-full h-full object-cover"
@@ -102,7 +136,7 @@ export function VideoCard({ video, isOwner, onDelete, onHashtagClick, searchTerm
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(video.id)} className="bg-destructive hover:bg-destructive/90">
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>

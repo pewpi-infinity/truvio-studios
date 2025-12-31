@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { extractHashtags, createVideoThumbnail, formatFileSize } from '@/lib/helpers'
 import { Video } from '@/lib/types'
+import { storeVideo } from '@/lib/videoStorage'
 import { toast } from 'sonner'
 
 interface VideoUploadDialogProps {
@@ -81,15 +82,26 @@ export function VideoUploadDialog({ open, onOpenChange, onUpload, userId }: Vide
     setUploading(true)
 
     try {
-      const videoUrl = URL.createObjectURL(videoFile)
       const thumbnailUrl = await createVideoThumbnail(videoFile)
       const hashtags = extractHashtags(description)
-
-      const newVideo: Video = {
-        id: `video-${Date.now()}`,
+      const videoId = `video-${Date.now()}`
+      
+      // Store video in IndexedDB for persistent storage
+      await storeVideo(videoId, videoFile, thumbnailUrl, {
         title: title.trim(),
         description: description.trim(),
-        videoUrl,
+        hashtags,
+        createdAt: Date.now(),
+        ownerId: userId
+      })
+
+      // Create video metadata to store in KV
+      // Empty videoUrl indicates the video is stored in IndexedDB and will be loaded dynamically
+      const newVideo: Video = {
+        id: videoId,
+        title: title.trim(),
+        description: description.trim(),
+        videoUrl: '', // Empty string indicates IndexedDB storage
         thumbnailUrl,
         hashtags,
         createdAt: Date.now(),

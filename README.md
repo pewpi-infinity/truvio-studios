@@ -35,20 +35,35 @@ npm run build
 
 ## Configuration
 
-### API Integration (Optional)
+### Real-Time Silver Price API Setup
 
-To enable real-time silver price data, set these environment variables:
+The application displays silver price data and charts. By default, it shows simulated data for demonstration purposes. To enable **real-time market data**:
 
-```bash
-# Create a .env file in the root directory
-VITE_USE_REAL_API=true
-VITE_API_KEY=your_api_key_here
-```
+1. **Choose an API Provider** (free tiers available):
+   - **[Metals-API](https://metals-api.com/)** - 100 requests/month free (Recommended)
+   - **[GoldAPI.io](https://www.goldapi.io/)** - 100 requests/month free
+   - **[MetalpriceAPI](https://metalpriceapi.com/)** - Multiple currencies supported
 
-**Recommended API Providers:**
-- [Metals-API](https://metals-api.com/) - Free tier available
-- [GoldAPI.io](https://www.goldapi.io/) - 100 requests/month free
-- [MetalpriceAPI](https://metalpriceapi.com/) - Multiple currencies
+2. **Sign up and get your API key** from your chosen provider
+
+3. **Configure environment variables**:
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env and set your API key
+   VITE_USE_REAL_API=true
+   VITE_API_KEY=your_api_key_here
+   ```
+
+4. **Restart the development server** to apply changes:
+   ```bash
+   npm run dev
+   ```
+
+The application will now fetch real USA silver spot prices (XAG/USD) and China market prices with proper Shanghai Gold Exchange (SGE) premium calculations.
+
+**Note**: API requests are cached to minimize usage. If the API fails or is unavailable, the system gracefully falls back to cached data or simulated prices.
 
 ### Repository Configuration
 
@@ -56,6 +71,26 @@ Set your repository URL for the "Build Your Own" feature:
 
 ```bash
 VITE_REPO_URL=https://github.com/your-username/your-repo
+```
+
+### Presentation Context Configuration
+
+The application displays a customizable presentation context (e.g., "Silver", "Gold", "Commodities"). 
+
+- The default context is defined in `runtime.config.json`
+- Users can change the context via the "Change Context" button in the UI
+- Runtime changes are stored in the browser's KV store and persist across sessions
+- To make a context change permanent across deployments:
+  1. Edit `runtime.config.json` in the repository
+  2. Update the `presentationContext` field
+  3. Commit and push the changes
+  
+Example `runtime.config.json`:
+```json
+{
+  "app": "78b7da0b5b514ee56610",
+  "presentationContext": "Gold"
+}
 ```
 
 ## Usage
