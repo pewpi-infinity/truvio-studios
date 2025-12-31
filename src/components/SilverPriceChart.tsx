@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import { motion } from 'framer-motion'
+import { Eye, EyeSlash } from '@phosphor-icons/react'
 import { fetchSilverPrice, generateMockPriceHistory } from '@/lib/silverApi'
 import { PricePoint } from '@/lib/types'
+import { Button } from '@/components/ui/button'
 
 export function SilverPriceChart() {
   const svgRef = useRef<SVGSVGElement>(null)
   const [data, setData] = useState<PricePoint[]>([])
+  const [showExchanges, setShowExchanges] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const tooltipRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -46,10 +50,19 @@ export function SilverPriceChart() {
       .domain(d3.extent(data, d => d.time) as [number, number])
       .range([0, innerWidth])
 
+    // Calculate price range
+    const allPrices: number[] = []
+    data.forEach(d => {
+      allPrices.push(d.price)
+      if (showExchanges && d.exchanges) {
+        allPrices.push(...Object.values(d.exchanges))
+      }
+    })
+
     const yScale = d3.scaleLinear()
       .domain([
-        d3.min(data, d => d.price)! * 0.998,
-        d3.max(data, d => d.price)! * 1.002
+        d3.min(allPrices)! * 0.998,
+        d3.max(allPrices)! * 1.002
       ])
       .range([innerHeight, 0])
 
@@ -103,6 +116,82 @@ export function SilverPriceChart() {
       .ease(d3.easeQuadInOut)
       .attr('stroke-dashoffset', 0)
 
+    // Draw individual exchange lines if enabled
+    if (showExchanges && data[0]?.exchanges) {
+      const exchanges = Object.keys(data[0].exchanges)
+      const colors = ['#f59e0b', '#8b5cf6', '#ec4899', '#10b981']
+      
+      exchanges.forEach((exchange, idx) => {
+        const exchangeLine = d3.line<PricePoint>()
+          .x(d => xScale(d.time))
+          .y(d => yScale(d.exchanges?.[exchange] || d.price))
+          .curve(d3.curveMonotoneX)
+        
+        g.append('path')
+          .datum(data)
+          .attr('fill', 'none')
+          .attr('stroke', colors[idx % colors.length])
+          .attr('stroke-width', 1.5)
+          .attr('stroke-dasharray', '4,4')
+          .attr('opacity', 0.6)
+          .attr('d', exchangeLine)
+      })
+    }
+
+    // Add interactive tooltip
+    const tooltip = d3.select(tooltipRef.current)
+    
+    const focus = g.append('g')
+      .style('display', 'none')
+    
+    focus.append('circle')
+      .attr('r', 4)
+      .attr('fill', 'oklch(0.72 0.15 210)')
+      .attr('stroke', 'white')
+      .attr('stroke-width', 2)
+    
+    const overlay = g.append('rect')
+      .attr('width', innerWidth)
+      .attr('height', innerHeight)
+      .attr('opacity', 0)
+      .on('mouseover', () => {
+        focus.style('display', null)
+        tooltip.style('display', 'block')
+      })
+      .on('mouseout', () => {
+        focus.style('display', 'none')
+        tooltip.style('display', 'none')
+      })
+      .on('mousemove', (event) => {
+        const [mouseX] = d3.pointer(event)
+        const x0 = xScale.invert(mouseX)
+        const bisect = d3.bisector<PricePoint, Date>((d) => d.time).left
+        const idx = bisect(data, x0.getTime())
+        const d = data[idx]
+        
+        if (d) {
+          focus.attr('transform', `translate(${xScale(d.time)},${yScale(d.price)})`)
+          
+          let tooltipHTML = `
+            <div class="font-semibold">$${d.price.toFixed(2)}</div>
+            <div class="text-xs text-muted-foreground">${d3.timeFormat('%H:%M')(new Date(d.time))}</div>
+          `
+          
+          if (showExchanges && d.exchanges) {
+            tooltipHTML += '<div class="mt-2 space-y-1">'
+            Object.entries(d.exchanges).forEach(([exchange, price]) => {
+              tooltipHTML += `<div class="text-xs"><span class="font-medium">${exchange}:</span> $${price.toFixed(2)}</div>`
+            })
+            tooltipHTML += '</div>'
+          }
+          
+          tooltip
+            .html(tooltipHTML)
+            .style('left', `${event.pageX + 10}px`)
+            .style('top', `${event.pageY - 10}px`)
+        }
+      })
+
     const xAxis = d3.axisBottom(xScale)
       .ticks(6)
       .tickFormat((d) => d3.timeFormat('%H:%M')(d as Date))
@@ -140,7 +229,7 @@ export function SilverPriceChart() {
       )
       .call(g => g.select('.domain').remove())
 
-  }, [data])
+  }, [data, showExchanges])
 
   return (
     <motion.div
@@ -150,10 +239,26 @@ export function SilverPriceChart() {
       className="bg-card border border-border rounded-lg p-6 shadow-lg"
       ref={containerRef}
     >
-      <h3 className="text-xl font-semibold mb-4 text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-        24-Hour Price Chart
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-semibold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          24-Hour Price Chart
+        </h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowExchanges(!showExchanges)}
+          className="flex items-center gap-2"
+        >
+          {showExchanges ? <EyeSlash size={16} /> : <Eye size={16} />}
+          {showExchanges ? 'Hide' : 'Show'} Exchanges
+        </Button>
+      </div>
       <svg ref={svgRef} className="w-full"></svg>
+      <div 
+        ref={tooltipRef}
+        className="absolute hidden bg-card border border-border rounded-lg px-3 py-2 shadow-lg pointer-events-none z-10"
+        style={{ display: 'none' }}
+      />
     </motion.div>
   )
 }

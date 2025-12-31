@@ -37,23 +37,38 @@ npm run build
 
 ### Real-Time Silver Price API Setup
 
-The application displays silver price data and charts. By default, it shows simulated data for demonstration purposes. To enable **real-time market data**:
+The application displays silver price data and charts using a **multi-source aggregation system** that combines prices from worldwide exchanges. By default, it shows simulated data for demonstration purposes. To enable **real-time market data**:
 
-1. **Choose an API Provider** (free tiers available):
+#### Multi-Index Aggregation Algorithm
+
+The system fetches silver prices from multiple worldwide exchanges and calculates a weighted average:
+
+- **LBMA (London)** - 40% weight - Global benchmark for precious metals
+- **COMEX (USA)** - 30% weight - Major futures market
+- **Shanghai Gold Exchange (China)** - 20% weight - Largest physical silver market
+- **Other markets** - 10% weight - Regional exchanges
+
+This weighted approach provides a comprehensive, globally-representative silver price that accounts for regional variations and market dynamics.
+
+#### API Provider Setup
+
+1. **Choose one or more API providers** (free tiers available):
+   - **[MetalpriceAPI](https://metalpriceapi.com/)** - Multiple currencies, reliable data
    - **[Metals-API](https://metals-api.com/)** - 100 requests/month free (Recommended)
-   - **[GoldAPI.io](https://www.goldapi.io/)** - 100 requests/month free
-   - **[MetalpriceAPI](https://metalpriceapi.com/)** - Multiple currencies supported
+   - **[Commodities-API](https://commodities-api.com/)** - Commodities data provider
 
-2. **Sign up and get your API key** from your chosen provider
+2. **Sign up and get your API keys** from your chosen provider(s)
 
 3. **Configure environment variables**:
    ```bash
    # Copy the example environment file
    cp .env.example .env
    
-   # Edit .env and set your API key
+   # Edit .env and set your API keys
    VITE_USE_REAL_API=true
-   VITE_API_KEY=your_api_key_here
+   VITE_METALPRICEAPI_KEY=your_metalpriceapi_key_here
+   VITE_METALS_API_KEY=your_metals_api_key_here
+   VITE_COMMODITIES_API_KEY=your_commodities_api_key_here
    ```
 
 4. **Restart the development server** to apply changes:
@@ -61,9 +76,23 @@ The application displays silver price data and charts. By default, it shows simu
    npm run dev
    ```
 
-The application will now fetch real USA silver spot prices (XAG/USD) and China market prices with proper Shanghai Gold Exchange (SGE) premium calculations.
+#### Features
 
-**Note**: API requests are cached to minimize usage. If the API fails or is unavailable, the system gracefully falls back to cached data or simulated prices.
+- **Multi-source fetching**: Attempts to fetch from multiple APIs with automatic fallback
+- **Smart caching**: Data less than 30 seconds old is reused to minimize API calls
+- **Persistent storage**: Price history stored in localStorage for offline viewing
+- **Automatic updates**: Prices refresh every 60 seconds for real-time tracking
+- **Exchange breakdown**: View which exchanges are contributing to the aggregated price
+- **24-hour metrics**: Displays high, low, and volume data
+- **Graceful degradation**: Falls back to cached or simulated data if APIs fail
+
+The application displays:
+- Aggregated worldwide silver spot prices (XAG/USD)
+- China market prices with Shanghai Gold Exchange (SGE) premium calculations
+- Individual exchange contributions with visual indicators
+- Historical price charts with smooth animations
+
+**Note**: API requests are intelligently cached. The system implements exponential backoff for failed requests and always provides data even when APIs are unavailable.
 
 ### Repository Configuration
 
